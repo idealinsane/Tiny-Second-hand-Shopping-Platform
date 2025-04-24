@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  username     String
+  password     String
+  bio          String        @default("")
+  createdAt    DateTime      @default(now())
+  isAdmin      Boolean       @default(false)
+  isSuspended  Boolean       @default(false)
+  reportCount  Int           @default(0)
+  balance      Int           @default(100000)
+  products     Product[]
+  messages     ChatMessage[]
+  reports      Report[]
+  chatRooms    ChatRoom[] // added relation field
+  buyerOrders  Order[]       @relation("BuyerOrders")
+  sellerOrders Order[]       @relation("SellerOrders")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  price       Int
+  imageUrl    String?
+  status      String   @default("available")
+  createdAt   DateTime @default(now())
+  reportCount Int      @default(0)
+  seller      User     @relation(fields: [sellerId], references: [id])
+  sellerId    String
+  reports     Report[]
+  orders      Order[]
+}
+
+model ChatRoom {
+  id              String        @id @default(cuid())
+  name            String
+  isGlobal        Boolean       @default(false)
+  lastMessage     String?
+  lastMessageTime DateTime?
+  messages        ChatMessage[]
+  participants    User[] // relation (many-to-many)
+  createdAt       DateTime      @default(now())
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  sender    User     @relation(fields: [senderId], references: [id])
+  senderId  String
+  room      ChatRoom @relation(fields: [roomId], references: [id])
+  roomId    String
+}
+
+model Report {
+  id         String   @id @default(cuid())
+  reason     String
+  status     String   @default("pending")
+  createdAt  DateTime @default(now())
+  reporter   User     @relation(fields: [reporterId], references: [id])
+  reporterId String
+  targetType String // "user" or "product"
+  targetId   String
+  product    Product? @relation(fields: [productId], references: [id])
+  productId  String?
+}
+
+model Order {
+  id        String   @id @default(cuid())
+  buyer     User     @relation("BuyerOrders", fields: [buyerId], references: [id])
+  buyerId   String
+  seller    User     @relation("SellerOrders", fields: [sellerId], references: [id])
+  sellerId  String
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String
+  amount    Int
+  createdAt DateTime @default(now())
+}
