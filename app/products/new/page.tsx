@@ -19,6 +19,7 @@ export default function NewProductPage() {
   const [description, setDescription] = useState("")
   const [price, setPrice] = useState("")
   const [image, setImage] = useState<File | null>(null)
+  const [imageBase64, setImageBase64] = useState<string>("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
@@ -30,6 +31,18 @@ export default function NewProductPage() {
         </Alert>
       </div>
     )
+  }
+
+  // 파일을 Base64 문자열로 변환하는 함수
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        resolve(reader.result as string)
+      }
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,7 +61,10 @@ export default function NewProductPage() {
       setLoading(true)
       const sanitizedTitle = sanitizeInput(title)
       const sanitizedDescription = sanitizeInput(description)
-      // 이미지 업로드 로직이 필요하다면 여기에 추가
+      let imageBase64Str = imageBase64
+      if (image && !imageBase64Str) {
+        imageBase64Str = await fileToBase64(image)
+      }
       const res = await fetch("/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -56,7 +72,7 @@ export default function NewProductPage() {
           title: sanitizedTitle,
           description: sanitizedDescription,
           price: priceValue,
-          imageUrl: undefined, // image 업로드 구현 시 실제 URL로 대체
+          imageBase64: imageBase64Str,
         }),
       })
       if (!res.ok) {
@@ -122,9 +138,11 @@ export default function NewProductPage() {
                 id="image"
                 type="file"
                 accept="image/*"
-                onChange={(e) => {
+                onChange={async (e) => {
                   if (e.target.files && e.target.files.length > 0) {
                     setImage(e.target.files[0])
+                    const base64 = await fileToBase64(e.target.files[0])
+                    setImageBase64(base64)
                   }
                 }}
               />

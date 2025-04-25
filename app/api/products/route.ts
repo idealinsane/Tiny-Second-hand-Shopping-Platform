@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     const { id: userId } = JSON.parse(token)
 
     const body = await request.json()
-    const { title, description, price, imageUrl } = body
+    const { title, description, price, imageBase64 } = body
 
     // 입력값 검증
     if (!title || !description || !price) {
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
         title: sanitizedTitle,
         description: sanitizedDescription,
         price: priceValue,
-        imageUrl,
+        imageUrl: imageBase64 || null,
         sellerId: userId,
         status: "available",
       },

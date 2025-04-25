@@ -77,6 +77,29 @@ export async function POST(request: Request) {
       },
     })
 
+    // 상품 신고라면 신고 카운트 증가 및 자동 제재 처리
+    if (targetType === "product") {
+      // 상품의 신고 카운트 증가
+      const product = await prisma.product.update({
+        where: { id: targetId },
+        data: { reportCount: { increment: 1 } },
+      })
+
+      // 5회 이상 신고 시 상품 비활성화 및 판매자 자동 휴면 처리
+      if (product.reportCount + 1 >= 5 && product.status !== "removed") {
+        // 상품 비활성화
+        await prisma.product.update({
+          where: { id: targetId },
+          data: { status: "removed" },
+        })
+        // 판매자 자동 휴면 처리
+        await prisma.user.update({
+          where: { id: product.sellerId },
+          data: { isSuspended: true },
+        })
+      }
+    }
+
     return NextResponse.json(report)
   } catch (error) {
     console.error("Create report error:", error)
