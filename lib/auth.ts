@@ -36,7 +36,6 @@ export async function registerUser(data: { username: string; email: string; pass
       createdAt: user.createdAt.toISOString(),
       isAdmin: user.isAdmin,
       isSuspended: user.isSuspended,
-      reportCount: user.reportCount,
     }
   } catch (error) {
     console.error("Register user error:", error)
@@ -74,7 +73,6 @@ export async function loginUser(email: string, password: string): Promise<User> 
       createdAt: user.createdAt.toISOString(),
       isAdmin: user.isAdmin,
       isSuspended: user.isSuspended,
-      reportCount: user.reportCount,
     }
   } catch (error) {
     console.error("Login user error:", error)
@@ -135,7 +133,6 @@ export async function getCurrentUser(): Promise<User | null> {
         createdAt: user.createdAt.toISOString(),
         isAdmin: user.isAdmin,
         isSuspended: user.isSuspended,
-        reportCount: user.reportCount,
       }
     } catch (error) {
       console.error("Get current user error:", error)

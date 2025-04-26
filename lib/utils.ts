@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import sanitizeHtmlLib from "sanitize-html"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -20,6 +21,11 @@ export function validatePassword(password: string): boolean {
 // 입력값 정제 (XSS 방지)
 export function sanitizeInput(input: string): string {
   return input.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;")
+}
+
+// sanitize-html 래퍼 함수 (통일성 위해 utils에서 제공)
+export function sanitizeHtml(input: string): string {
+  return sanitizeHtmlLib(input, { allowedTags: [], allowedAttributes: {} })
 }
 
 // 가격 포맷팅

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { prisma } from "@/lib/prisma"
-import { sanitizeInput } from "@/lib/utils"
+import { sanitizeInput, sanitizeHtml } from "@/lib/utils"
+import { validateCsrfToken } from "@/lib/csrf"
 
 export async function GET(request: Request) {
   try {
@@ -45,6 +46,11 @@ export async function POST(request: Request) {
     // 토큰에서 사용자 ID 추출
     const { id: userId } = JSON.parse(token)
 
+    // CSRF 토큰 검증
+    if (!validateCsrfToken(request)) {
+      return NextResponse.json({ message: "잘못된 접근입니다(CSRF)." }, { status: 403 })
+    }
+
     const body = await request.json()
     const { title, description, price, imageBase64 } = body
 
@@ -58,14 +64,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "유효한 가격을 입력해주세요." }, { status: 400 })
     }
 
-    const sanitizedTitle = sanitizeInput(title)
-    const sanitizedDescription = sanitizeInput(description)
+    // 상품 등록 시 XSS 방어 적용
+    const safeTitle = sanitizeHtml(title)
+    const safeDescription = sanitizeHtml(description)
 
     // 상품 생성 (DB)
     const product = await prisma.product.create({
       data: {
-        title: sanitizedTitle,
-        description: sanitizedDescription,
+        title: safeTitle,
+        description: safeDescription,
         price: priceValue,
         imageUrl: imageBase64 || null,
         sellerId: userId,

@@ -8,5 +8,4 @@ export interface Product {
   sellerName: string
   createdAt: string
   status: "available" | "sold" | "removed"
-  reportCount: number
 }

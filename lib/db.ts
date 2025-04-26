@@ -191,27 +191,6 @@ export async function createReport(data: {
     }
   })
 
-  // 신고 대상의 신고 횟수 증가
-  if (data.targetType === 'user') {
-    await prisma.user.update({
-      where: { id: data.targetId },
-      data: {
-        reportCount: {
-          increment: 1
-        }
-      }
-    })
-  } else {
-    await prisma.product.update({
-      where: { id: data.targetId },
-      data: {
-        reportCount: {
-          increment: 1
-        }
-      }
-    })
-  }
-
   return report
 }
 
@@ -240,33 +219,6 @@ export async function updateReportStatus(id: string, status: 'resolved' | 'dismi
       product: true
     }
   })
-
-  // 신고가 해결되었고 일정 횟수 이상 신고된 경우 조치
-  if (status === 'resolved') {
-    if (report.targetType === 'user') {
-      const user = await prisma.user.findUnique({
-        where: { id: report.targetId }
-      })
-
-      if (user && user.reportCount >= 5) {
-        await prisma.user.update({
-          where: { id: report.targetId },
-          data: { isSuspended: true }
-        })
-      }
-    } else if (report.targetType === 'product') {
-      const product = await prisma.product.findUnique({
-        where: { id: report.targetId }
-      })
-
-      if (product && product.reportCount >= 3) {
-        await prisma.product.update({
-          where: { id: report.targetId },
-          data: { status: 'removed' }
-        })
-      }
-    }
-  }
 
   return report
 }

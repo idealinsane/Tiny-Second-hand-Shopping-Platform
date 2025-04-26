@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { sanitizeInput } from "@/lib/utils"
+import { sanitizeHtml } from "sanitize-html"
 import { prisma } from "@/lib/prisma"
+import { validateCsrfToken } from "@/lib/csrf"
 
 export async function GET() {
   try {
@@ -51,6 +52,11 @@ export async function POST(request: Request) {
     // 토큰에서 사용자 ID 추출
     const { id: userId } = JSON.parse(token)
 
+    // CSRF 토큰 검증
+    if (!validateCsrfToken(request)) {
+      return NextResponse.json({ message: "잘못된 접근입니다(CSRF)." }, { status: 403 })
+    }
+
     const body = await request.json()
     const { targetType, targetId, reason } = body
 
@@ -64,7 +70,7 @@ export async function POST(request: Request) {
     }
 
     // 입력값 정제
-    const sanitizedReason = sanitizeInput(reason)
+    const sanitizedReason = sanitizeHtml(reason)
 
     // 신고 생성 (DB)
     const report = await prisma.report.create({
@@ -74,19 +80,20 @@ export async function POST(request: Request) {
         targetId,
         reason: sanitizedReason,
         status: "pending",
+        productId: targetType === "product" ? targetId : undefined,
       },
     })
 
-    // 상품 신고라면 신고 카운트 증가 및 자동 제재 처리
+    // 상품 신고라면 reports 배열 활용해 신고 개수 집계 및 자동 제재 처리
     if (targetType === "product") {
-      // 상품의 신고 카운트 증가
-      const product = await prisma.product.update({
+      // 해당 상품의 신고 내역(reports 배열) 개수 집계
+      const productWithReports = await prisma.product.findUnique({
         where: { id: targetId },
-        data: { reportCount: { increment: 1 } },
+        include: { reports: true },
       })
+      const reportTotal = productWithReports?.reports.length ?? 0
 
-      // 5회 이상 신고 시 상품 비활성화 및 판매자 자동 휴면 처리
-      if (product.reportCount + 1 >= 5 && product.status !== "removed") {
+      if (reportTotal >= 5 && productWithReports?.status !== "removed") {
         // 상품 비활성화
         await prisma.product.update({
           where: { id: targetId },
@@ -94,7 +101,7 @@ export async function POST(request: Request) {
         })
         // 판매자 자동 휴면 처리
         await prisma.user.update({
-          where: { id: product.sellerId },
+          where: { id: productWithReports.sellerId },
           data: { isSuspended: true },
         })
       }

@@ -6,5 +6,4 @@ export interface User {
   createdAt: string
   isAdmin: boolean
   isSuspended: boolean
-  reportCount: number
 }

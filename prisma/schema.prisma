@@ -22,7 +22,6 @@ model User {
   createdAt    DateTime      @default(now())
   isAdmin      Boolean       @default(false)
   isSuspended  Boolean       @default(false)
-  reportCount  Int           @default(0)
   balance      Int           @default(100000)
   products     Product[]
   messages     ChatMessage[]
@@ -40,7 +39,6 @@ model Product {
   imageUrl    String?
   status      String   @default("available")
   createdAt   DateTime @default(now())
-  reportCount Int      @default(0)
   seller      User     @relation(fields: [sellerId], references: [id])
   sellerId    String
   reports     Report[]

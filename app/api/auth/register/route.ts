@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { validateEmail, validatePassword, sanitizeInput } from "@/lib/utils"
+import { validateEmail, validatePassword, sanitizeInput, sanitizeHtml, validateCsrfToken } from "@/lib/utils"
 import { cookies } from "next/headers"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
@@ -20,6 +20,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "비밀번호는 8자 이상, 영문/숫자/특수문자를 포함해야 합니다." }, { status: 400 })
     }
 
+    // CSRF 토큰 검증
+    if (!validateCsrfToken(request)) {
+      return NextResponse.json({ message: "잘못된 접근입니다(CSRF)." }, { status: 403 })
+    }
+
     // 이메일 중복 확인
     const existing = await prisma.user.findUnique({ where: { email } })
     if (existing) {
@@ -32,13 +37,12 @@ export async function POST(request: Request) {
     // 사용자 생성
     const newUser = await prisma.user.create({
       data: {
-        username: sanitizeInput(username),
+        username: sanitizeHtml(username, { allowedTags: [], allowedAttributes: {} }),
         email,
         password: hashedPassword,
         bio: "",
         isAdmin: false,
         isSuspended: false,
-        reportCount: 0,
       },
     })
 
