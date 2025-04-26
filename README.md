@@ -1,3 +1,5 @@
+[WHS 3기 10반 김민수]
+
 # 중고거래 플랫폼
 
 이 프로젝트는 Next.js를 사용하여 개발된 중고거래 플랫폼입니다. 사용자는 상품을 등록하고, 다른 사용자와 채팅을 통해 거래할 수 있습니다.
@@ -43,8 +45,8 @@
 1. 저장소를 클론합니다:
 
 ```bash
-git clone https://github.com/yourusername/tinysecondhandplatform.git
-cd tinysecondhandplatform
+git clone https://github.com/idealinsane/Tiny-Second-hand-Shopping-Platform.git
+cd Tiny-Second-hand-Shopping-Platform
 ```
 
 2. 의존성을 설치합니다:
